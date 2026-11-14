@@ -36,7 +36,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements-dbt.txt
-      - run: dbt --version && dbt debug
+      - run: mkdir -p target && dbt --version && dbt debug  # DuckDB needs target/ to exist
       - name: Load 1 (full build)
         run: |
           python -m ecom generate --batch 1

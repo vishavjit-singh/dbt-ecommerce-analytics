@@ -1,5 +1,6 @@
 # dbt-duckdb + the project's Python tools. `docker run --rm -v "$PWD/target:/app/target" <image>` runs make dbt-demo.
-FROM python:3.11-slim-bookworm
+# trixie ships SQLite 3.46; the SQLite harness needs >= 3.44 for ORDER BY inside group_concat.
+FROM python:3.11-slim-trixie
 
 RUN apt-get update && apt-get install -y --no-install-recommends make git && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
