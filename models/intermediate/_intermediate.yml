@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: int_order_lines
+    description: Valid order lines (quantity > 0) with revenue and cost.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: line_revenue
+        data_tests: [not_null, non_negative]
+
+  - name: int_order_payments
+    description: "Payments per order: captured, refunded, failed attempts and methods used."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: int_orders
+    description: "{{ doc('int_orders') }}"
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: net_revenue
+        description: Line revenue minus order discount, before shipping.
+      - name: customer_order_number
+        description: 1 for the customer's first order (any status), 2 for the second, and so on.

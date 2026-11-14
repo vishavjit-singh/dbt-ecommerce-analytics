@@ -1,0 +1,18 @@
+version: 2
+
+exposures:
+  - name: revenue_and_retention_dashboard
+    label: Revenue & retention dashboard
+    type: dashboard
+    maturity: medium
+    description: >
+      Daily revenue trend, monthly cohort retention and customer segments. In this repo the
+      "dashboard" is the set of charts rendered by `python -m ecom report`.
+    depends_on:
+      - ref('fct_daily_revenue')
+      - ref('fct_cohort_retention')
+      - ref('dim_customers')
+      - ref('fct_product_performance')
+    owner:
+      name: Analytics engineering
+      email: analytics@example.com

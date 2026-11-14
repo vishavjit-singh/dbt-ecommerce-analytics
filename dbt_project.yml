@@ -1,0 +1,86 @@
+name: ecommerce_analytics
+version: "1.0.0"
+config-version: 2
+profile: ecommerce_analytics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages", "logs"]
+
+vars:
+  as_of_date: "2025-12-31"            # "today" for recency metrics; keeps results reproducible
+  incremental_lookback_days: 3        # re-process orders updated this close to the last load
+  revenue_statuses: ["completed", "shipped"]
+
+models:
+  ecommerce_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  ecommerce_analytics:
+    +schema: raw
+    # Raw extracts land as text, exactly as delivered; staging owns every cast.
+    raw_customers:
+      +column_types:
+        customer_id: varchar
+        email: varchar
+        first_name: varchar
+        last_name: varchar
+        country: varchar
+        signup_date: varchar
+        updated_at: varchar
+        _loaded_at: varchar
+    raw_products:
+      +column_types:
+        product_id: varchar
+        product_name: varchar
+        category: varchar
+        unit_cost: varchar
+        list_price: varchar
+        is_active: varchar
+        _loaded_at: varchar
+    raw_orders:
+      +column_types:
+        order_id: varchar
+        customer_id: varchar
+        order_ts: varchar
+        status: varchar
+        channel: varchar
+        discount_amount: varchar
+        shipping_amount: varchar
+        updated_at: varchar
+        _loaded_at: varchar
+    raw_order_items:
+      +column_types:
+        order_item_id: varchar
+        order_id: varchar
+        product_id: varchar
+        quantity: varchar
+        unit_price: varchar
+        _loaded_at: varchar
+    raw_payments:
+      +column_types:
+        payment_id: varchar
+        order_id: varchar
+        payment_method: varchar
+        amount: varchar
+        status: varchar
+        created_at: varchar
+        _loaded_at: varchar
+
+snapshots:
+  ecommerce_analytics:
+    +target_schema: snapshots

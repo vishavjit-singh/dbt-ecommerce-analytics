@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "{{ doc('stg_customers') }}"
+    columns:
+      - name: customer_id
+        description: Natural key from the shop database.
+        data_tests: [unique, not_null]
+      - name: email
+        description: Lower-cased and trimmed.
+        data_tests: [not_null]
+      - name: country
+        description: ISO-3166 alpha-2, upper case.
+        data_tests:
+          - accepted_values:
+              values: ["IN", "US", "GB", "DE", "AE", "SG"]
+      - name: is_test_account
+        description: 1 for internal QA accounts (emails at test.example.com); their orders never count.
+
+  - name: stg_products
+    description: Product catalogue with typed prices and a normalised category.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - accepted_values:
+              values: ["electronics", "home", "fashion", "beauty", "books", "sports"]
+      - name: unit_cost
+        data_tests: [not_null, non_negative]
+      - name: list_price
+        data_tests: [not_null, non_negative]
+
+  - name: stg_orders
+    description: "{{ doc('stg_orders') }}"
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: status
+        description: "{{ doc('order_status') }}"
+        data_tests:
+          - accepted_values:
+              values: ["completed", "shipped", "pending", "cancelled", "returned"]
+      - name: channel
+        data_tests:
+          - accepted_values:
+              values: ["web", "app", "marketplace"]
+      - name: discount_amount
+        data_tests: [non_negative]
+
+  - name: stg_order_items
+    description: Order lines with a typed quantity and price; imputed prices are flagged.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: unit_price
+        data_tests: [not_null, non_negative]
+      - name: product_id
+        data_tests:
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+  - name: stg_payments
+    description: Payment attempts, captures and refunds.
+    columns:
+      - name: payment_id
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              values: ["success", "failed", "refunded"]
+      - name: payment_method
+        data_tests:
+          - accepted_values:
+              values: ["card", "upi", "wallet", "cod"]

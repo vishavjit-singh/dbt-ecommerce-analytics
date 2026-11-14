@@ -1,0 +1,76 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: "{{ doc('fct_orders') }}"
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: status
+        description: "{{ doc('order_status') }}"
+        data_tests:
+          - accepted_values:
+              values: ["completed", "shipped", "pending", "cancelled", "returned"]
+      - name: is_revenue
+        description: 1 when the status is in var('revenue_statuses').
+        data_tests:
+          - accepted_values:
+              values: [0, 1]
+              quote: false
+      - name: net_revenue
+        data_tests: [not_null, non_negative]
+      - name: paid_amount
+        data_tests: [non_negative]
+      - name: customer_order_number
+        data_tests: [not_null]
+
+  - name: dim_customers
+    description: "{{ doc('dim_customers') }}"
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: lifetime_revenue
+        data_tests: [not_null, non_negative]
+      - name: segment
+        description: "{{ doc('rfm_segment') }}"
+        data_tests:
+          - accepted_values:
+              values: ["champions", "loyal", "new", "at_risk", "hibernating", "needs_attention", "prospect"]
+      - name: recency_score
+        data_tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false
+
+  - name: fct_daily_revenue
+    description: Net revenue, orders, customers and first orders per day, with a trailing 7-day average.
+    columns:
+      - name: order_date
+        data_tests: [unique, not_null]
+      - name: net_revenue
+        data_tests: [not_null, non_negative]
+
+  - name: fct_cohort_retention
+    description: Share of each monthly cohort that placed a revenue order N months after its first.
+    data_tests:
+      - unique_combination:
+          columns: [cohort_month, months_since_first_order]
+    columns:
+      - name: retention_rate
+        data_tests: [not_null, non_negative]
+      - name: months_since_first_order
+        data_tests: [not_null, non_negative]
+
+  - name: fct_product_performance
+    description: Units, revenue and margin per product from revenue orders, ranked within the category.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: revenue
+        data_tests: [non_negative]

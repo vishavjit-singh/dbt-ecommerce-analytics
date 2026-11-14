@@ -1,0 +1,7 @@
+# generator, SQLite test harness, charts
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+Jinja2>=3.1
+PyYAML>=6.0
+click>=8.1

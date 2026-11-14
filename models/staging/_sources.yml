@@ -1,0 +1,54 @@
+version: 2
+
+sources:
+  - name: shop
+    description: Raw extracts from the (synthetic) shop database, loaded as seeds into the raw schema as text.
+    schema: raw
+    loaded_at_field: "cast(_loaded_at as timestamp)"
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 72, period: hour}
+    tables:
+      - name: customers
+        identifier: raw_customers
+        description: One row per customer change, re-deliveries and older versions included.
+        columns:
+          - name: customer_id
+            data_tests:
+              - not_null:
+                  config: {severity: warn}
+              - unique:
+                  config: {severity: warn}     # expected to warn: the extract re-delivers rows
+      - name: products
+        identifier: raw_products
+        columns:
+          - name: product_id
+            data_tests: [unique, not_null]
+      - name: orders
+        identifier: raw_orders
+        columns:
+          - name: order_id
+            data_tests:
+              - unique:
+                  config: {severity: warn}     # expected to warn: duplicate deliveries
+          - name: customer_id
+            data_tests:
+              - relationships:
+                  to: source('shop', 'customers')
+                  field: customer_id
+                  config: {severity: warn}     # expected to warn: orphan orders
+      - name: order_items
+        identifier: raw_order_items
+        columns:
+          - name: order_item_id
+            data_tests: [unique, not_null]
+          - name: order_id
+            data_tests:
+              - relationships:
+                  to: source('shop', 'orders')
+                  field: order_id
+      - name: payments
+        identifier: raw_payments
+        columns:
+          - name: payment_id
+            data_tests: [unique, not_null]

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  harness:
+    name: lint, tests, SQLite harness
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check src pytests
+      - run: pytest -q
+      - run: make demo
+
+  dbt:
+    name: dbt build on DuckDB (two loads) + parity with the harness
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: .
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dbt.txt
+      - run: dbt --version && dbt debug
+      - name: Load 1 (full build)
+        run: |
+          python -m ecom generate --batch 1
+          dbt seed
+          dbt build
+      - name: Load 2 (incremental fct_orders, snapshot picks up customer changes)
+        run: |
+          python -m ecom generate --batch 2
+          dbt seed
+          dbt build
+      - run: dbt source freshness
+      - run: dbt docs generate
+      - name: Same models through the SQLite harness, then compare the marts
+        run: |
+          python -m ecom harness
+          python -m ecom compare
+      - name: Charts from the dbt-duckdb output
+        run: python -m ecom report --db target/ecommerce.duckdb --out dbt-report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dbt-artifacts
+          path: |
+            target/manifest.json
+            target/run_results.json
+            target/catalog.json
+            target/index.html
+            target/sources.json
+            dbt-report/*.png
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t dbt-ecommerce-analytics .
+      - run: docker run --rm dbt-ecommerce-analytics

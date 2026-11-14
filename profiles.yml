@@ -1,0 +1,8 @@
+# Local DuckDB file; no server, no credentials. Use with --profiles-dir . (or DBT_PROFILES_DIR=.)
+ecommerce_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: target/ecommerce.duckdb
+      threads: 4
